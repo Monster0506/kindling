@@ -2,6 +2,7 @@
 
 from kindling.app import Application
 from kindling.request import Request
+from kindling.server import serve
 from kindling.response import (
     Response,
     html_response,
@@ -14,6 +15,7 @@ from kindling.response import (
 __all__ = [
     "Application",
     "Request",
+    "serve",
     "Response",
     "html_response",
     "internal_server_error",
