@@ -43,13 +43,14 @@ Run with **waitress**, **gunicorn**, etc., e.g. `gunicorn myapp:wsgi_app`.
 
 ## Live pages and reactive UI
 
-- **`LivePage`**: one URL, GET renders a template, POST runs named `action=` handlers or element bindings, then re-renders.
-- **Client script:** `GET /_kindling/client.js` (mounted when you use `LivePage`). In templates, include the script and `{{ kindling_live.binding_tag()|safe }}`.
+- **`LivePage`**: one URL, GET renders a **template** or an **`html_body`** callable, POST runs named `action=` handlers or element bindings, then re-renders.
+- **Client script:** `GET /_kindling/client.js` (mounted when you use `LivePage`). In templates, include the script and `{{ kindling_live.binding_tag()|safe }}`. For **`@body`** / **`app.page`** handlers that return HTML strings, Kindling injects both before `</body>` when missing.
 - **`with app.reactive(...):`**: scoped `signal` / `computed`, plus `bind`, `live`, and `on` decorators. If you use `@bind` or `@live`, Kindling registers **`GET /_kindling/reactive/<scope>`** and the client opens **EventSource** to apply updates.
+- **`app.page("/path")`**: registers a **`LivePage`** with no reactive scope (static or hand-written HTML).
 
-Use `scope.expose(count=count)` (and similar) to pass reactive values into the Jinja context.
+Use **`expose(count=count)`** or **`scope.expose(count=count)`** to pass reactive values into the Jinja context.
 
-See **REACTIVE_RFC.md** for naming and bind syntax (`bind(selector, "text"|"html"|"json")`).
+See **REACTIVE_RFC.md** for naming and bind syntax (`bind(selector, "text"|"html"|"json")`). Example apps live under **`demos/`** (see **`demos/README.md`**).
 
 ## Dev server vs SSE
 
@@ -65,4 +66,5 @@ uv run pytest
 
 - **ARCHITECTURE.md** — layout of packages and request flow.
 - **REACTIVE_RFC.md** — reactive scope, bind/live/on, transport.
+- **demos/README.md** — how to run the sample apps.
 - **implementation.md** — ordered build plan used for this codebase.
