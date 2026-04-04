@@ -55,6 +55,7 @@ class LivePage:
         path: str,
         template_name: str,
         context: ContextFn,
+        seed_element_handlers: dict[tuple[str, str], ActionFn] | None = None,
     ) -> None:
         self._app = app
         self._path = path
@@ -62,6 +63,8 @@ class LivePage:
         self._context = context
         self._actions: dict[str, ActionFn] = {}
         self._element_handlers: dict[tuple[str, str], ActionFn] = {}
+        if seed_element_handlers:
+            self._element_handlers.update(seed_element_handlers)
         self._helper = KindlingLiveHelper(self)
         mount_kindling_client(app)
         app.route(path, ("GET",), self._on_get)

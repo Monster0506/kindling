@@ -94,6 +94,7 @@ class Application:
     _jinja_env: Environment | None = field(default=None, init=False, repr=False)
     _reactive_names: set[str] = field(default_factory=set, repr=False)
     _reactive_paths: set[str] = field(default_factory=set, repr=False)
+    _reactive_scopes: dict[str, object] = field(default_factory=dict, repr=False)
 
     def _ensure_jinja(self) -> Environment:
         if self._jinja_env is not None:

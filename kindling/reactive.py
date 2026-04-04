@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import TYPE_CHECKING, Any, Iterator, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Iterator, TypeVar
 
 from signals import computed as _computed
 from signals import effect
@@ -19,16 +19,24 @@ _reactive_scope: ContextVar[ReactiveScope | None] = ContextVar(
 
 
 class ReactiveScope:
-    """Active `with app.reactive(...)` scope; extended in later commits for bind/live/on."""
+    """Active `with app.reactive(...)` scope; collects bind/live/on and template exports."""
 
     def __init__(self, app: Application, name: str, path: str, template: str) -> None:
         self.app = app
         self.name = name
         self.path = path
         self.template = template
+        self._exports: dict[str, Any] = {}
+        self._on_handlers: dict[tuple[str, str], Callable[..., object]] = {}
+        self._binds: list[tuple[str, str, Any]] = []
+        self._lives: list[tuple[str, Any]] = []
+
+    def expose(self, **variables: Any) -> None:
+        """Expose names to the Jinja template (e.g. ``expose(count=count)``)."""
+        self._exports.update(variables)
 
     def template_context(self) -> dict[str, Any]:
-        return {}
+        return dict(self._exports)
 
 
 def signal(initial: T) -> Any:
@@ -43,7 +51,54 @@ def computed(fn: Any) -> Any:
     return _computed(fn)
 
 
-__all__ = ["ReactiveScope", "computed", "effect", "managed_scope", "signal"]
+def bind(selector: str, mode: str):
+    if mode not in ("text", "html", "json"):
+        raise ValueError("bind mode must be 'text', 'html', or 'json'")
+
+    def deco(fn: Any) -> Any:
+        sc = _reactive_scope.get()
+        if sc is None:
+            raise RuntimeError("bind() requires an active reactive scope")
+        cell = _computed(fn)
+        sc._binds.append((selector, mode, cell))
+        return fn
+
+    return deco
+
+
+def live(key: str):
+    def deco(fn: Any) -> Any:
+        sc = _reactive_scope.get()
+        if sc is None:
+            raise RuntimeError("live() requires an active reactive scope")
+        cell = _computed(fn)
+        sc._lives.append((key, cell))
+        return fn
+
+    return deco
+
+
+def on(element_id: str, event: str):
+    def deco(fn: Any) -> Any:
+        sc = _reactive_scope.get()
+        if sc is None:
+            raise RuntimeError("on() requires an active reactive scope")
+        sc._on_handlers[(element_id, event.lower())] = fn
+        return fn
+
+    return deco
+
+
+__all__ = [
+    "ReactiveScope",
+    "bind",
+    "computed",
+    "effect",
+    "live",
+    "managed_scope",
+    "on",
+    "signal",
+]
 
 
 @contextmanager
@@ -64,6 +119,13 @@ def managed_scope(app: Application, name: str, path: str, template: str) -> Iter
     _reactive_scope.reset(token)
     app._reactive_names.add(name)
     app._reactive_paths.add(path)
+    app._reactive_scopes[name] = scope
     from kindling.live_page import LivePage
 
-    LivePage(app, path, template, context=scope.template_context)
+    LivePage(
+        app,
+        path,
+        template,
+        context=scope.template_context,
+        seed_element_handlers=dict(scope._on_handlers),
+    )
