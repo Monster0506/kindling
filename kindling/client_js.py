@@ -1,4 +1,8 @@
-"""Bundled LivePage browser runtime (vanilla JS)."""
+"""Bundled LivePage browser runtime (vanilla JS).
+
+Morph must not re-inject this script: each load stacked duplicate document listeners,
+so one click issued N POSTs (counter jumped by N).
+"""
 
 from __future__ import annotations
 
@@ -30,11 +34,15 @@ CLIENT_JS = r"""
     document.body.innerHTML = doc.body.innerHTML;
     var scripts = doc.body.querySelectorAll("script[src]");
     scripts.forEach(function (s) {
+      var src = s.getAttribute("src") || "";
+      if (src.indexOf("_kindling/client.js") !== -1) return;
       var n = document.createElement("script");
       n.src = s.src;
       n.defer = true;
       document.body.appendChild(n);
     });
+    var cfg = readConfig();
+    if (cfg) setupReactive(cfg);
   }
 
   function postUrlEncoded(body) {
@@ -53,9 +61,23 @@ CLIENT_JS = r"""
 
   function setupReactive(cfg) {
     if (!cfg || !cfg.reactiveUrl) return;
+    if (
+      window.__kindlingReactiveUrl === cfg.reactiveUrl &&
+      window.__kindlingEs &&
+      window.__kindlingEs.readyState !== 2
+    ) {
+      return;
+    }
+    if (window.__kindlingEs) {
+      try {
+        window.__kindlingEs.close();
+      } catch (e) {}
+      window.__kindlingEs = null;
+    }
+    window.__kindlingReactiveUrl = cfg.reactiveUrl;
     try {
-      var es = new EventSource(cfg.reactiveUrl);
-      es.onmessage = function (ev) {
+      window.__kindlingEs = new EventSource(cfg.reactiveUrl);
+      window.__kindlingEs.onmessage = function (ev) {
         var msg;
         try {
           msg = JSON.parse(ev.data);
@@ -82,74 +104,73 @@ CLIENT_JS = r"""
     } catch (e) {}
   }
 
-  function attach(cfg) {
-    if (!cfg) return;
-    var bindings = cfg.bindings || {};
-    setupReactive(cfg);
+  function onDocumentSubmit(e) {
+    var cfg = readConfig();
+    var bindings = (cfg && cfg.bindings) || {};
+    var form = e.target;
+    if (!(form instanceof HTMLFormElement)) return;
+    if (form.method.toLowerCase() !== "post") return;
+    var actionUrl;
+    try {
+      actionUrl = new URL(form.getAttribute("action") || "", location.href);
+    } catch (err) {
+      return;
+    }
+    if (actionUrl.pathname !== location.pathname) return;
 
-    document.addEventListener(
-      "submit",
-      function (e) {
-        var form = e.target;
-        if (!(form instanceof HTMLFormElement)) return;
-        if (form.method.toLowerCase() !== "post") return;
-        var actionUrl;
-        try {
-          actionUrl = new URL(form.getAttribute("action") || "", location.href);
-        } catch (err) {
-          return;
-        }
-        if (actionUrl.pathname !== location.pathname) return;
+    if (form.id && bindings[form.id] && bindings[form.id].indexOf("submit") !== -1) {
+      e.preventDefault();
+      var params = new URLSearchParams(new FormData(form));
+      params.set("kindling_target", form.id);
+      params.set("kindling_event", "submit");
+      postUrlEncoded(params.toString()).then(morphBody);
+      return;
+    }
 
-        if (form.id && bindings[form.id] && bindings[form.id].indexOf("submit") !== -1) {
-          e.preventDefault();
-          var params = new URLSearchParams(new FormData(form));
-          params.set("kindling_target", form.id);
-          params.set("kindling_event", "submit");
-          postUrlEncoded(params.toString()).then(morphBody);
-          return;
-        }
-
-        e.preventDefault();
-        var params2 = new URLSearchParams(new FormData(form));
-        postUrlEncoded(params2.toString()).then(morphBody);
-      },
-      true
-    );
-
-    document.addEventListener(
-      "click",
-      function (e) {
-        var t = e.target;
-        if (!t) return;
-
-        var btn = t.closest && t.closest("[data-kindling-action]");
-        if (btn) {
-          e.preventDefault();
-          var name = btn.getAttribute("data-kindling-action");
-          if (name) postUrlEncoded("action=" + encodeURIComponent(name)).then(morphBody);
-          return;
-        }
-
-        var n = t;
-        while (n && n !== document) {
-          if (n.id && bindings[n.id] && bindings[n.id].indexOf("click") !== -1) {
-            e.preventDefault();
-            postUrlEncoded(
-              "kindling_target=" +
-                encodeURIComponent(n.id) +
-                "&kindling_event=click"
-            ).then(morphBody);
-            return;
-          }
-          n = n.parentElement;
-        }
-      },
-      true
-    );
+    e.preventDefault();
+    var params2 = new URLSearchParams(new FormData(form));
+    postUrlEncoded(params2.toString()).then(morphBody);
   }
 
-  attach(readConfig());
+  function onDocumentClick(e) {
+    var cfg = readConfig();
+    var bindings = (cfg && cfg.bindings) || {};
+    var t = e.target;
+    if (!t) return;
+
+    var btn = t.closest && t.closest("[data-kindling-action]");
+    if (btn) {
+      e.preventDefault();
+      var name = btn.getAttribute("data-kindling-action");
+      if (name) postUrlEncoded("action=" + encodeURIComponent(name)).then(morphBody);
+      return;
+    }
+
+    var n = t;
+    while (n && n !== document) {
+      if (n.id && bindings[n.id] && bindings[n.id].indexOf("click") !== -1) {
+        e.preventDefault();
+        postUrlEncoded(
+          "kindling_target=" +
+            encodeURIComponent(n.id) +
+            "&kindling_event=click"
+        ).then(morphBody);
+        return;
+      }
+      n = n.parentElement;
+    }
+  }
+
+  function bootstrap() {
+    var cfg = readConfig();
+    if (cfg) setupReactive(cfg);
+    if (window.__kindlingDocListeners) return;
+    window.__kindlingDocListeners = true;
+    document.addEventListener("submit", onDocumentSubmit, true);
+    document.addEventListener("click", onDocumentClick, true);
+  }
+
+  bootstrap();
 })();
 """.strip()
 

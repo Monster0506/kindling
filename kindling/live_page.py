@@ -4,9 +4,9 @@ import inspect
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any
 
-from kindling.client_js import mount_kindling_client
+from kindling.client_js import KINDLING_CLIENT_PATH, mount_kindling_client
 from kindling.request import Request
-from kindling.response import Response, bad_request, not_found
+from kindling.response import Response, bad_request, html_response, not_found
 
 if TYPE_CHECKING:
     from kindling.app import Application
@@ -22,6 +22,11 @@ class KindlingLiveHelper:
         self._page = page
 
     def binding_tag(self) -> str:
+        """Return the ``<script type="application/json" id="kindling-live-config">`` element.
+
+        Jinja pages call this explicitly. ``html_body`` string responses get the same tag
+        automatically before ``</body>`` unless it is already in the HTML.
+        """
         import json
 
         cfg = self._page._binding_manifest()
@@ -47,20 +52,25 @@ class ElementBinder:
 
 
 class LivePage:
-    """One path: GET renders a template; POST runs a named `action` then re-renders."""
+    """One path: GET renders a template or a ``body`` callable; POST then re-renders."""
 
     def __init__(
         self,
         app: Application,
         path: str,
-        template_name: str,
+        template_name: str | None,
         context: ContextFn,
+        *,
+        html_body: Callable[..., object] | None = None,
         seed_element_handlers: dict[tuple[str, str], ActionFn] | None = None,
         reactive_stream_url: str | None = None,
     ) -> None:
+        if (template_name is None) == (html_body is None):
+            raise ValueError("LivePage requires exactly one of template_name (str) or html_body=")
         self._app = app
         self._path = path
         self._template_name = template_name
+        self._html_body = html_body
         self._context = context
         self._reactive_stream_url = reactive_stream_url
         self._actions: dict[str, ActionFn] = {}
@@ -97,9 +107,46 @@ class LivePage:
             return fn()
         return fn(req)
 
+    def _invoke_html_body(self, req: Request) -> object:
+        assert self._html_body is not None
+        fn = self._html_body
+        sig = inspect.signature(fn)
+        n = len(sig.parameters)
+        if n == 0:
+            return fn()
+        if n == 1:
+            return fn(req)
+        if n == 2:
+            return fn(req, self._helper)
+        raise TypeError(f"body handler must take 0–2 arguments, not {n}")
+
+    def _maybe_inject_kindling_runtime(self, html: str) -> str:
+        """Insert live config + client script before ``</body>`` if the HTML omits them."""
+        parts: list[str] = []
+        if "kindling-live-config" not in html:
+            parts.append(self._helper.binding_tag())
+        if "_kindling/client.js" not in html:
+            parts.append(f'<script src="{KINDLING_CLIENT_PATH}" defer></script>')
+        if not parts:
+            return html
+        blob = "".join(parts)
+        lower = html.lower()
+        close = lower.rfind("</body>")
+        if close != -1:
+            return html[:close] + blob + html[close:]
+        return html + blob
+
     def _render(self, req: Request) -> Response:
+        if self._html_body is not None:
+            out = self._invoke_html_body(req)
+            if isinstance(out, Response):
+                return out
+            if isinstance(out, str):
+                return html_response(self._maybe_inject_kindling_runtime(out))
+            raise TypeError(f"body handler must return str or Response, got {type(out)!r}")
         ctx = dict(self._context())
         ctx["kindling_live"] = self._helper
+        assert self._template_name is not None
         return self._app.render(self._template_name, **ctx)
 
     def _on_get(self, req: Request) -> Response:
