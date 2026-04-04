@@ -92,6 +92,8 @@ class Application:
     config: KindlingConfig = field(default_factory=KindlingConfig)
     _routes: list[_Route] = field(default_factory=list, repr=False)
     _jinja_env: Environment | None = field(default=None, init=False, repr=False)
+    _reactive_names: set[str] = field(default_factory=set, repr=False)
+    _reactive_paths: set[str] = field(default_factory=set, repr=False)
 
     def _ensure_jinja(self) -> Environment:
         if self._jinja_env is not None:
@@ -134,6 +136,11 @@ class Application:
             return fn
 
         return deco
+
+    def reactive(self, name: str, *, path: str, template: str):
+        from kindling.reactive import managed_scope
+
+        return managed_scope(self, name, path, template)
 
     def dispatch(self, req: Request) -> Response:
         path_segs = _split_path(req.path)
