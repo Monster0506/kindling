@@ -2,7 +2,7 @@
 
 from kindling.app import Application
 from kindling.live_page import LivePage
-from kindling.reactive import bind, computed, effect, live, on, signal
+from kindling.reactive import bind, body, computed, effect, expose, live, on, signal
 from kindling.request import Request
 from kindling.server import serve
 from kindling.wsgi import make_wsgi_app
@@ -20,8 +20,10 @@ __all__ = [
     "LivePage",
     "Request",
     "bind",
+    "body",
     "computed",
     "effect",
+    "expose",
     "live",
     "on",
     "signal",

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
@@ -144,7 +144,24 @@ class Application:
 
         return deco
 
-    def reactive(self, name: str, *, path: str, template: str):
+    def page(self, pattern: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+        """Register a :class:`~kindling.live_page.LivePage` from an HTML callable (no ``reactive`` block).
+
+        The handler may take ``()``, ``(req)``, or ``(req, kindling_live)`` and return ``str`` or
+        :class:`~kindling.response.Response`. String bodies get ``kindling-live-config`` and
+        ``/_kindling/client.js`` injected before ``</body>`` when missing, same as ``@body`` inside
+        ``app.reactive``.
+        """
+
+        def deco(fn: Callable[..., Any]) -> Callable[..., Any]:
+            from kindling.live_page import LivePage
+
+            LivePage(self, pattern, None, context=lambda: {}, html_body=fn)
+            return fn
+
+        return deco
+
+    def reactive(self, name: str, *, path: str, template: str | None = None):
         from kindling.reactive import managed_scope
 
         return managed_scope(self, name, path, template)

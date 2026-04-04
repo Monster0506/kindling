@@ -22,7 +22,7 @@ _reactive_scope: ContextVar[ReactiveScope | None] = ContextVar(
 class ReactiveScope:
     """Active `with app.reactive(...)` scope; collects bind/live/on and template exports."""
 
-    def __init__(self, app: Application, name: str, path: str, template: str) -> None:
+    def __init__(self, app: Application, name: str, path: str, template: str | None) -> None:
         self.app = app
         self.name = name
         self.path = path
@@ -31,9 +31,19 @@ class ReactiveScope:
         self._on_handlers: dict[tuple[str, str], Callable[..., object]] = {}
         self._binds: list[tuple[str, str, Any]] = []
         self._lives: list[tuple[str, Any]] = []
+        self._html_body: Callable[..., object] | None = None
+
+    def body(self, fn: Callable[..., object]) -> Callable[..., object]:
+        """Register raw HTML (same as module-level :func:`body` inside ``with app.reactive``)."""
+        if self._html_body is not None:
+            raise ValueError("Only one body handler is allowed per reactive scope")
+        if self.template is not None:
+            raise ValueError("Cannot use body() when template= is set")
+        self._html_body = fn
+        return fn
 
     def expose(self, **variables: Any) -> None:
-        """Expose names to the Jinja template (e.g. ``expose(count=count)``)."""
+        """Expose names to Jinja (same as module-level :func:`expose` inside the block)."""
         self._exports.update(variables)
 
     def template_context(self) -> dict[str, Any]:
@@ -90,6 +100,26 @@ def on(element_id: str, event: str):
     return deco
 
 
+def expose(**variables: Any) -> None:
+    """Merge names into the Jinja context for the current ``app.reactive`` block."""
+    sc = _reactive_scope.get()
+    if sc is None:
+        raise RuntimeError("expose() requires an active reactive scope (use `with app.reactive(...):`)")
+    sc.expose(**variables)
+
+
+def body(fn: Callable[..., object]) -> Callable[..., object]:
+    """Register raw HTML for the current reactive block (no ``template=``).
+
+    Same as ``scope.body`` but does not require ``as scope``. The handler may take
+    ``()``, ``(req)``, or ``(req, kindling_live)`` and must return ``str`` or ``Response``.
+    """
+    sc = _reactive_scope.get()
+    if sc is None:
+        raise RuntimeError("body() requires an active reactive scope (use `with app.reactive(...):`)")
+    return sc.body(fn)
+
+
 def reactive_sse_snapshot(scope: ReactiveScope) -> dict[str, object]:
     binds = {sel: {"mode": mode, "value": cell.value} for sel, mode, cell in scope._binds}
     live = {key: cell.value for key, cell in scope._lives}
@@ -99,8 +129,10 @@ def reactive_sse_snapshot(scope: ReactiveScope) -> dict[str, object]:
 __all__ = [
     "ReactiveScope",
     "bind",
+    "body",
     "computed",
     "effect",
+    "expose",
     "live",
     "managed_scope",
     "on",
@@ -109,7 +141,9 @@ __all__ = [
 
 
 @contextmanager
-def managed_scope(app: Application, name: str, path: str, template: str) -> Iterator[ReactiveScope]:
+def managed_scope(
+    app: Application, name: str, path: str, template: str | None = None
+) -> Iterator[ReactiveScope]:
     if _reactive_scope.get() is not None:
         raise RuntimeError("Nested kindling.reactive scope is not allowed")
     if name in app._reactive_names:
@@ -130,6 +164,11 @@ def managed_scope(app: Application, name: str, path: str, template: str) -> Iter
     from kindling.live_page import LivePage
     from kindling.sse import register_sse_route
 
+    if template is not None and scope._html_body is not None:
+        raise ValueError("Pass either template= or @body, not both")
+    if template is None and scope._html_body is None:
+        raise ValueError("reactive() needs template=... or exactly one @body handler")
+
     reactive_url: str | None = None
     if scope._binds or scope._lives:
         safe = quote(scope.name, safe="")
@@ -139,8 +178,9 @@ def managed_scope(app: Application, name: str, path: str, template: str) -> Iter
     LivePage(
         app,
         path,
-        template,
+        template_name=template,
         context=scope.template_context,
+        html_body=scope._html_body,
         seed_element_handlers=dict(scope._on_handlers),
         reactive_stream_url=reactive_url,
     )
