@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Callable, Iterator, TypeVar
+from urllib.parse import quote
 
 from signals import computed as _computed
 from signals import effect
@@ -89,6 +90,12 @@ def on(element_id: str, event: str):
     return deco
 
 
+def reactive_sse_snapshot(scope: ReactiveScope) -> dict[str, object]:
+    binds = {sel: {"mode": mode, "value": cell.value} for sel, mode, cell in scope._binds}
+    live = {key: cell.value for key, cell in scope._lives}
+    return {"binds": binds, "live": live}
+
+
 __all__ = [
     "ReactiveScope",
     "bind",
@@ -121,6 +128,13 @@ def managed_scope(app: Application, name: str, path: str, template: str) -> Iter
     app._reactive_paths.add(path)
     app._reactive_scopes[name] = scope
     from kindling.live_page import LivePage
+    from kindling.sse import register_sse_route
+
+    reactive_url: str | None = None
+    if scope._binds or scope._lives:
+        safe = quote(scope.name, safe="")
+        reactive_url = f"/_kindling/reactive/{safe}"
+        register_sse_route(app, reactive_url, lambda sc=scope: reactive_sse_snapshot(sc))
 
     LivePage(
         app,
@@ -128,4 +142,5 @@ def managed_scope(app: Application, name: str, path: str, template: str) -> Iter
         template,
         context=scope.template_context,
         seed_element_handlers=dict(scope._on_handlers),
+        reactive_stream_url=reactive_url,
     )

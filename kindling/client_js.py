@@ -51,9 +51,41 @@ CLIENT_JS = r"""
     });
   }
 
+  function setupReactive(cfg) {
+    if (!cfg || !cfg.reactiveUrl) return;
+    try {
+      var es = new EventSource(cfg.reactiveUrl);
+      es.onmessage = function (ev) {
+        var msg;
+        try {
+          msg = JSON.parse(ev.data);
+        } catch (e) {
+          return;
+        }
+        var binds = msg.binds || {};
+        Object.keys(binds).forEach(function (sel) {
+          var b = binds[sel];
+          var el = document.querySelector(sel);
+          if (!el || !b) return;
+          if (b.mode === "text") el.textContent = String(b.value);
+          else if (b.mode === "html") el.innerHTML = String(b.value);
+          else
+            el.textContent =
+              typeof b.value === "string" ? b.value : JSON.stringify(b.value);
+        });
+        if (msg.live && Object.keys(msg.live).length) {
+          window.dispatchEvent(
+            new CustomEvent("kindling-live", { detail: msg.live })
+          );
+        }
+      };
+    } catch (e) {}
+  }
+
   function attach(cfg) {
     if (!cfg) return;
     var bindings = cfg.bindings || {};
+    setupReactive(cfg);
 
     document.addEventListener(
       "submit",

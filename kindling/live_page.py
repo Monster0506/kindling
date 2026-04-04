@@ -56,11 +56,13 @@ class LivePage:
         template_name: str,
         context: ContextFn,
         seed_element_handlers: dict[tuple[str, str], ActionFn] | None = None,
+        reactive_stream_url: str | None = None,
     ) -> None:
         self._app = app
         self._path = path
         self._template_name = template_name
         self._context = context
+        self._reactive_stream_url = reactive_stream_url
         self._actions: dict[str, ActionFn] = {}
         self._element_handlers: dict[tuple[str, str], ActionFn] = {}
         if seed_element_handlers:
@@ -80,7 +82,10 @@ class LivePage:
         bindings: dict[str, list[str]] = {}
         for (eid, ev), _ in self._element_handlers.items():
             bindings.setdefault(eid, []).append(ev)
-        return {"kindling": 1, "path": self._path, "bindings": bindings}
+        cfg: dict[str, Any] = {"kindling": 1, "path": self._path, "bindings": bindings}
+        if self._reactive_stream_url:
+            cfg["reactiveUrl"] = self._reactive_stream_url
+        return cfg
 
     def action(self, fn: ActionFn) -> ActionFn:
         self._actions[fn.__name__] = fn
