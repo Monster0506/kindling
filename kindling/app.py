@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from kindling.config import KindlingConfig, finalize_response
 from kindling.request import Request
 from kindling.response import Response, html_response
 
@@ -88,6 +89,7 @@ def _normalize_handler_result(result: object) -> Response:
 @dataclass
 class Application:
     template_dir: str | None = None
+    config: KindlingConfig = field(default_factory=KindlingConfig)
     _routes: list[_Route] = field(default_factory=list, repr=False)
     _jinja_env: Environment | None = field(default=None, init=False, repr=False)
 
@@ -149,7 +151,8 @@ class Application:
                 body=req.body,
                 route_params=params,
             )
-            return _normalize_handler_result(r.handler(merged))
+            out = _normalize_handler_result(r.handler(merged))
+            return finalize_response(out, self.config)
         from kindling.response import not_found
 
-        return not_found()
+        return finalize_response(not_found(), self.config)
