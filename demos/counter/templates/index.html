@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Counter — Kindling</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,500;0,9..40,600;1,9..40,500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #1c1917;
+      --fg: #fafaf9;
+      --muted: #a8a29e;
+      --ember: #ea580c;
+      --ember-dim: #9a3412;
+      --surface: #292524;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "DM Sans", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .panel {
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 2.25rem 2rem;
+      max-width: 22rem;
+      width: 100%;
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 24px 48px rgba(0,0,0,0.35);
+    }
+    .label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+    #readout {
+      font-size: 3.25rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      margin-bottom: 1.5rem;
+      color: var(--ember);
+    }
+    .row { display: flex; gap: 0.65rem; flex-wrap: wrap; align-items: center; margin-bottom: 0.75rem; }
+    button {
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 0.9rem;
+      border: none;
+      border-radius: 10px;
+      padding: 0.55rem 1rem;
+      cursor: pointer;
+      transition: transform 0.08s ease, box-shadow 0.08s ease;
+    }
+    button:active { transform: scale(0.97); }
+    button.primary {
+      background: linear-gradient(165deg, var(--ember) 0%, var(--ember-dim) 100%);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(234, 88, 12, 0.35);
+    }
+    button.secondary {
+      background: rgba(255,255,255,0.06);
+      color: var(--fg);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    form.inline { display: inline; margin: 0; padding: 0; }
+    .hint {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.45;
+      margin-top: 1.25rem;
+    }
+    .subtle {
+      display: inline-block;
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .subtle:hover { color: var(--ember); }
+    code { font-size: 0.88em; }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <div class="label">Count</div>
+    <div id="readout">{{ count|unwrap }}</div>
+    <div class="row">
+      <button type="button" class="primary" id="inc">+1</button>
+      <form class="inline" id="bump-form" method="post" action="/">
+        <button type="submit" class="secondary">POST +1</button>
+      </form>
+    </div>
+    <div class="row">
+      <button type="button" class="secondary" id="reset">Reset</button>
+    </div>
+    <p class="hint">
+      State lives in <code>kindling.signal</code> inside <code>app.reactive</code>.
+      The readout uses <code>@bind</code>; buttons use <code>@on</code>. Morph + SSE keep the UI in sync.
+    </p>
+    <p class="subtle">
+      <a class="subtle" href="/about">About (<code>@body</code>) →</a>
+      ·
+      <a class="subtle" href="/def"><code>app.page</code> →</a>
+    </p>
+  </div>
+  {{ kindling_live.binding_tag()|safe }}
+  <script src="/_kindling/client.js" defer></script>
+</body>
+</html>

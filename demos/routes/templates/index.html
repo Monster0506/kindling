@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Routes — Kindling</title>
+  <style>
+    :root { --bg: #0f172a; --fg: #f8fafc; --accent: #38bdf8; --muted: #94a3b8; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .panel {
+      background: rgba(30, 41, 59, 0.9);
+      border-radius: 16px;
+      padding: 2rem;
+      max-width: 24rem;
+      width: 100%;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    h1 { font-size: 1.25rem; margin: 0 0 0.5rem; font-weight: 600; }
+    p { color: var(--muted); margin: 0 0 1.25rem; font-size: 0.9rem; line-height: 1.5; }
+    .row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+    #readout {
+      font-size: 2rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      min-width: 3ch;
+    }
+    button {
+      background: var(--accent);
+      color: #0f172a;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    a { color: var(--accent); }
+    code { font-size: 0.85em; }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <h1>Routes demo</h1>
+    <p>Reactive UI on <code>/</code>; plain JSON on <code>/api/hello</code>.</p>
+    <div class="row">
+      <span id="readout">{{ count|unwrap }}</span>
+      <button type="button" id="inc">+1</button>
+    </div>
+    <p><a href="/api/hello">GET /api/hello</a></p>
+  </div>
+  {{ kindling_live.binding_tag()|safe }}
+  <script src="/_kindling/client.js" defer></script>
+</body>
+</html>
