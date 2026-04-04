@@ -51,34 +51,73 @@ CLIENT_JS = r"""
     });
   }
 
-  document.addEventListener("submit", function (e) {
-    var form = e.target;
-    if (!(form instanceof HTMLFormElement)) return;
-    if (form.method.toLowerCase() !== "post") return;
-    var actionUrl;
-    try {
-      actionUrl = new URL(form.getAttribute("action") || "", location.href);
-    } catch (err) {
-      return;
-    }
-    if (actionUrl.pathname !== location.pathname) return;
-    e.preventDefault();
-    var params = new URLSearchParams(new FormData(form));
-    postUrlEncoded(params.toString()).then(morphBody);
-  });
+  function attach(cfg) {
+    if (!cfg) return;
+    var bindings = cfg.bindings || {};
 
-  document.addEventListener("click", function (e) {
-    var t = e.target;
-    if (!t || !t.closest) return;
-    var btn = t.closest("[data-kindling-action]");
-    if (!btn) return;
-    e.preventDefault();
-    var name = btn.getAttribute("data-kindling-action");
-    if (!name) return;
-    postUrlEncoded("action=" + encodeURIComponent(name)).then(morphBody);
-  });
+    document.addEventListener(
+      "submit",
+      function (e) {
+        var form = e.target;
+        if (!(form instanceof HTMLFormElement)) return;
+        if (form.method.toLowerCase() !== "post") return;
+        var actionUrl;
+        try {
+          actionUrl = new URL(form.getAttribute("action") || "", location.href);
+        } catch (err) {
+          return;
+        }
+        if (actionUrl.pathname !== location.pathname) return;
 
-  readConfig();
+        if (form.id && bindings[form.id] && bindings[form.id].indexOf("submit") !== -1) {
+          e.preventDefault();
+          var params = new URLSearchParams(new FormData(form));
+          params.set("kindling_target", form.id);
+          params.set("kindling_event", "submit");
+          postUrlEncoded(params.toString()).then(morphBody);
+          return;
+        }
+
+        e.preventDefault();
+        var params2 = new URLSearchParams(new FormData(form));
+        postUrlEncoded(params2.toString()).then(morphBody);
+      },
+      true
+    );
+
+    document.addEventListener(
+      "click",
+      function (e) {
+        var t = e.target;
+        if (!t) return;
+
+        var btn = t.closest && t.closest("[data-kindling-action]");
+        if (btn) {
+          e.preventDefault();
+          var name = btn.getAttribute("data-kindling-action");
+          if (name) postUrlEncoded("action=" + encodeURIComponent(name)).then(morphBody);
+          return;
+        }
+
+        var n = t;
+        while (n && n !== document) {
+          if (n.id && bindings[n.id] && bindings[n.id].indexOf("click") !== -1) {
+            e.preventDefault();
+            postUrlEncoded(
+              "kindling_target=" +
+                encodeURIComponent(n.id) +
+                "&kindling_event=click"
+            ).then(morphBody);
+            return;
+          }
+          n = n.parentElement;
+        }
+      },
+      true
+    );
+  }
+
+  attach(readConfig());
 })();
 """.strip()
 

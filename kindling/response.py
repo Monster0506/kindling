@@ -45,5 +45,9 @@ def not_found(message: str = "Not Found") -> Response:
     return text_response(message, status=404)
 
 
+def bad_request(message: str = "Bad Request") -> Response:
+    return text_response(message, status=400)
+
+
 def internal_server_error(message: str = "Internal Server Error") -> Response:
     return text_response(message, status=500)
