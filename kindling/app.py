@@ -100,6 +100,7 @@ class Application:
     _reactive_names: set[str] = field(default_factory=set, repr=False)
     _reactive_paths: set[str] = field(default_factory=set, repr=False)
     _reactive_scopes: dict[str, object] = field(default_factory=dict, repr=False)
+    _wsgi_app_holder: object | None = field(default=None, init=False, repr=False)
 
     def _ensure_jinja(self) -> Environment:
         if self._jinja_env is not None:
@@ -156,6 +157,28 @@ class Application:
             return fn
 
         return deco
+
+    @property
+    def wsgi_app(self) -> object:
+        if self._wsgi_app_holder is None:
+            from kindling.wsgi import make_wsgi_app
+
+            self._wsgi_app_holder = make_wsgi_app(self)
+        return self._wsgi_app_holder
+
+    def run(
+        self,
+        host: str = "127.0.0.1",
+        port: int = 8000,
+        *,
+        label: str = "",
+        quiet: bool = False,
+    ) -> None:
+        from kindling.server import serve
+
+        if not quiet:
+            print(f"{label or 'Serving'} http://{host}:{port}/")
+        serve(self, host=host, port=port)
 
     def dispatch(self, req: Request) -> Response | StreamedHttpResponse:
         path_segs = _split_path(req.path)

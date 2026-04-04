@@ -29,6 +29,13 @@ def test_wsgi_get():
     assert body == b"hello"
 
 
+def test_wsgi_app_is_stable():
+    app = Application()
+    a = app.wsgi_app
+    b = app.wsgi_app
+    assert a is b
+
+
 def test_wsgi_post_form():
     app = Application()
 
