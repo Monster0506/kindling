@@ -4,11 +4,18 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+
 from kindling.request import Request
 from kindling.response import Response, html_response
 
 if TYPE_CHECKING:
     pass
+
+
+def _unwrap_filter(value: object) -> object:
+    v = getattr(value, "value", value)
+    return v
 
 Handler = Callable[[Request], object]
 
@@ -80,7 +87,27 @@ def _normalize_handler_result(result: object) -> Response:
 
 @dataclass
 class Application:
-    _routes: list[_Route] = field(default_factory=list)
+    template_dir: str | None = None
+    _routes: list[_Route] = field(default_factory=list, repr=False)
+    _jinja_env: Environment | None = field(default=None, init=False, repr=False)
+
+    def _ensure_jinja(self) -> Environment:
+        if self._jinja_env is not None:
+            return self._jinja_env
+        if not self.template_dir:
+            raise RuntimeError("Application(template_dir=...) is required to render templates")
+        env = Environment(
+            loader=FileSystemLoader(self.template_dir),
+            autoescape=select_autoescape(["html", "xml"]),
+        )
+        env.filters["unwrap"] = _unwrap_filter
+        self._jinja_env = env
+        return env
+
+    def render(self, template_name: str, **context: object) -> Response:
+        tpl = self._ensure_jinja().get_template(template_name)
+        html = tpl.render(**context)
+        return html_response(html)
 
     def route(
         self,
