@@ -10,6 +10,7 @@ import h11
 from kindling.config import finalize_response
 from kindling.request import Request
 from kindling.response import Response
+from kindling.streaming import StreamedHttpResponse
 
 if TYPE_CHECKING:
     from kindling.app import Application
@@ -76,12 +77,36 @@ def _handle_client(sock: socket.socket, app: Application) -> None:
         sock.close()
 
 
-def _write_response_raw(sock: socket.socket, conn: h11.Connection, resp: Response) -> None:
+def _write_response_raw(
+    sock: socket.socket,
+    conn: h11.Connection,
+    resp: Response | StreamedHttpResponse,
+) -> None:
+    if isinstance(resp, StreamedHttpResponse):
+        _write_streamed_response_raw(sock, conn, resp)
+        return
     header_list = [(k.encode("latin-1"), v.encode("latin-1")) for k, v in resp.headers]
     sock.sendall(conn.send(h11.Response(status_code=resp.status, headers=header_list)))
     if resp.body:
         sock.sendall(conn.send(h11.Data(data=resp.body)))
     sock.sendall(conn.send(h11.EndOfMessage()))
+
+
+def _write_streamed_response_raw(
+    sock: socket.socket, conn: h11.Connection, resp: StreamedHttpResponse
+) -> None:
+    headers = list(resp.headers)
+    names = {k.lower() for k, _ in headers}
+    if "content-length" not in names and "transfer-encoding" not in names:
+        headers = [("Transfer-Encoding", "chunked")] + headers
+    header_list = [(k.encode("latin-1"), v.encode("latin-1")) for k, v in headers]
+    sock.sendall(conn.send(h11.Response(status_code=resp.status, headers=header_list)))
+    try:
+        for chunk in resp.iterator:
+            if chunk:
+                sock.sendall(conn.send(h11.Data(data=chunk)))
+    finally:
+        sock.sendall(conn.send(h11.EndOfMessage()))
 
 
 def serve(
