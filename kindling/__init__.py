@@ -1,5 +1,6 @@
 """Kindling web framework."""
 
+from kindling.app import Application
 from kindling.request import Request
 from kindling.response import (
     Response,
@@ -11,6 +12,7 @@ from kindling.response import (
 )
 
 __all__ = [
+    "Application",
     "Request",
     "Response",
     "html_response",
