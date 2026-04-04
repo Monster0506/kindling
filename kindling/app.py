@@ -6,9 +6,10 @@ from typing import TYPE_CHECKING
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from kindling.config import KindlingConfig, finalize_response
+from kindling.config import KindlingConfig, finalize_response, finalize_streaming
 from kindling.request import Request
 from kindling.response import Response, html_response
+from kindling.streaming import StreamedHttpResponse
 
 if TYPE_CHECKING:
     pass
@@ -69,7 +70,9 @@ def _match_route(
     return params
 
 
-def _normalize_handler_result(result: object) -> Response:
+def _normalize_handler_result(result: object) -> Response | StreamedHttpResponse:
+    if isinstance(result, StreamedHttpResponse):
+        return result
     if isinstance(result, Response):
         return result
     if isinstance(result, str):
@@ -83,7 +86,9 @@ def _normalize_handler_result(result: object) -> Response:
             ),
             body=result,
         )
-    raise TypeError(f"handler must return Response, str, or bytes; got {type(result)!r}")
+    raise TypeError(
+        f"handler must return Response, StreamedHttpResponse, str, or bytes; got {type(result)!r}"
+    )
 
 
 @dataclass
@@ -143,7 +148,16 @@ class Application:
 
         return managed_scope(self, name, path, template)
 
-    def dispatch(self, req: Request) -> Response:
+    def sse(self, pattern: str):
+        from kindling.sse import register_sse_route
+
+        def deco(fn: Callable[[], dict]) -> Callable[[], dict]:
+            register_sse_route(self, pattern, fn)
+            return fn
+
+        return deco
+
+    def dispatch(self, req: Request) -> Response | StreamedHttpResponse:
         path_segs = _split_path(req.path)
         for r in self._routes:
             if req.method not in r.methods:
@@ -160,6 +174,8 @@ class Application:
                 route_params=params,
             )
             out = _normalize_handler_result(r.handler(merged))
+            if isinstance(out, StreamedHttpResponse):
+                return finalize_streaming(out, self.config)
             return finalize_response(out, self.config)
         from kindling.response import not_found
 

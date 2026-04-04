@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from kindling.response import Response
+from kindling.streaming import StreamedHttpResponse
 
 
 @dataclass
@@ -31,3 +32,16 @@ def finalize_response(resp: Response, config: KindlingConfig) -> Response:
     if not prefix:
         return resp
     return Response(status=resp.status, headers=tuple(prefix) + resp.headers, body=resp.body)
+
+
+def finalize_streaming(resp: StreamedHttpResponse, config: KindlingConfig) -> StreamedHttpResponse:
+    present = {name.lower() for name, _ in resp.headers}
+    prefix: list[tuple[str, str]] = []
+    if config.server_header and "server" not in present:
+        prefix.append(("Server", config.server_header))
+    for name, value in config.default_security_headers:
+        if name.lower() not in present:
+            prefix.append((name, value))
+    if not prefix:
+        return resp
+    return StreamedHttpResponse(resp.status, tuple(prefix) + resp.headers, resp.iterator)
