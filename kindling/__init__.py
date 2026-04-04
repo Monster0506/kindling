@@ -3,6 +3,7 @@
 from kindling.app import Application
 from kindling.request import Request
 from kindling.server import serve
+from kindling.wsgi import make_wsgi_app
 from kindling.response import (
     Response,
     html_response,
@@ -15,6 +16,7 @@ from kindling.response import (
 __all__ = [
     "Application",
     "Request",
+    "make_wsgi_app",
     "serve",
     "Response",
     "html_response",
