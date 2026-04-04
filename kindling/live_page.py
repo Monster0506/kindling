@@ -4,6 +4,7 @@ import inspect
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any
 
+from kindling.client_js import KINDLING_CLIENT_PATH, CLIENT_JS, mount_kindling_client
 from kindling.request import Request
 from kindling.response import Response, not_found
 
@@ -15,10 +16,20 @@ ActionFn = Callable[..., object]
 
 
 class KindlingLiveHelper:
-    """Injected into templates as `kindling_live`; binding tag added in later commits."""
+    """Injected into templates as `kindling_live`; embeds config JSON for the client script."""
+
+    def __init__(self, path: str) -> None:
+        self._path = path
 
     def binding_tag(self) -> str:
-        return ""
+        import json
+
+        cfg = {"kindling": 1, "path": self._path}
+        return (
+            f'<script type="application/json" id="kindling-live-config">'
+            f"{json.dumps(cfg)}"
+            f"</script>"
+        )
 
 
 class LivePage:
@@ -36,7 +47,8 @@ class LivePage:
         self._template_name = template_name
         self._context = context
         self._actions: dict[str, ActionFn] = {}
-        self._helper = KindlingLiveHelper()
+        self._helper = KindlingLiveHelper(path)
+        mount_kindling_client(app)
         app.route(path, ("GET",), self._on_get)
         app.route(path, ("POST",), self._on_post)
 
