@@ -24,7 +24,11 @@ def _environ_to_headers(environ: dict[str, str]) -> tuple[tuple[str, str], ...]:
 
 
 def make_wsgi_app(app: Application) -> WSGIApp:
-    """Build a WSGI callable. Streaming responses are not supported."""
+    """Build a WSGI callable.
+
+    Normal responses return a single iterable chunk. Streaming bodies
+    (e.g. ``StreamedHttpResponse`` / SSE) are not supported by this adapter yet.
+    """
 
     def wsgi_app(environ: dict, start_response: Callable) -> list[bytes]:
         method = environ.get("REQUEST_METHOD", "GET").upper()
