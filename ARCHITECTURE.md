@@ -2,13 +2,13 @@
 
 ## Layout
 
-- `**kindling/app.py**` — `Application`: routing (`get` / `post` / `route` / `sse`), `dispatch`, `render`, `reactive`, `page`, `run`, `wsgi_app`.
+- `**kindling/app.py**` — `Application`: routing (`get` / `post` / `route` / `sse`), `dispatch`, `render` / `render_to_html`, `reactive`, `page`, `run`, `wsgi_app`.
 - `**kindling/request.py**` / `**kindling/response.py**` — immutable-ish `Request`, `Response`, and small factories (`html_response`, `json_response`, etc.).
 - `**kindling/config.py**` — `KindlingConfig`, `finalize_response`, `finalize_streaming`.
 - `**kindling/server.py**` — HTTP/1.1 via **h11**, threaded `serve()`.
 - `**kindling/wsgi.py`** — `make_wsgi_app` for WSGI servers.
-- `**kindling/live_page.py**` — `LivePage` (Jinja template **or** `html_body` callable), element `id` bindings, optional auto-injection of `kindling-live-config` + client script for string bodies, Jinja `kindling_live` helper.
-- `**kindling/client_js.py**` — embedded morph client, `/_kindling/client.js`.
+- `**kindling/live_page.py**` — `LivePage` (Jinja template **or** `html_body` callable), element `id` bindings, auto-injection of `kindling-live-config` + client script for rendered HTML when missing, Jinja `kindling_live` helper.
+- `**kindling/client_js.py**` / `**kindling/idiomorph.min.js**` — `/_kindling/client.js` bundles **Idiomorph** plus Kindling POST/morph/SSE glue.
 - `**kindling/reactive.py**` — reactive scope (`template=` optional if `@body`), module `expose` / `body`, `signal` / `computed` guards, `bind` / `live` / `on`, SSE snapshot registration.
 - `**kindling/sse.py**` / `**kindling/streaming.py**` — `SseFanout`, `StreamedHttpResponse`, `@app.sse`.
 

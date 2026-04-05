@@ -51,14 +51,12 @@
 <body>
   <div class="panel">
     <h1>Routes demo</h1>
-    <p>Reactive UI on <code>/</code>; plain JSON on <code>/api/hello</code>.</p>
+    <p>Reactive UI on <code>/</code>; <code>/api/hello</code> returns the same <code>count</code> signal as JSON.</p>
     <div class="row">
       <span id="readout">{{ count|unwrap }}</span>
       <button type="button" id="inc">+1</button>
     </div>
     <p><a href="/api/hello">GET /api/hello</a></p>
   </div>
-  {{ kindling_live.binding_tag()|safe }}
-  <script src="/_kindling/client.js" defer></script>
 </body>
 </html>

@@ -44,7 +44,7 @@ Run with **waitress**, **gunicorn**, etc., e.g. `gunicorn myapp:wsgi_app`.
 ## Live pages and reactive UI
 
 - **`LivePage`**: one URL, GET renders a **template** or an **`html_body`** callable, POST runs named `action=` handlers or element bindings, then re-renders.
-- **Client script:** `GET /_kindling/client.js` (mounted when you use `LivePage`). In templates, include the script and `{{ kindling_live.binding_tag()|safe }}`. For **`@body`** / **`app.page`** handlers that return HTML strings, Kindling injects both before `</body>` when missing.
+- **Client script:** `GET /_kindling/client.js` (mounted when you use `LivePage`). POST responses are merged into the live DOM with **Idiomorph** (vendored, 0BSD). For **LivePage** (Jinja, **`@body`**, **`app.page`**), Kindling injects `kindling-live-config` and that script before `</body>` when missing. Inline scripts after a morph are re-run via a small Kindling hook (use one-time guards for `window` listeners). You can still call `{{ kindling_live.binding_tag()|safe }}` for a custom placement.
 - **`with app.reactive(...):`**: scoped `signal` / `computed`, plus `bind`, `live`, and `on` decorators. If you use `@bind` or `@live`, Kindling registers **`GET /_kindling/reactive/<scope>`** and the client opens **EventSource** to apply updates.
 - **`app.page("/path")`**: registers a **`LivePage`** with no reactive scope (static or hand-written HTML).
 

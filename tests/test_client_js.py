@@ -17,4 +17,5 @@ def test_client_js_route_returns_javascript(tmp_path: Path):
     assert r.status == 200
     ct = {k.lower(): v for k, v in r.headers}["content-type"]
     assert "javascript" in ct
+    assert b"Idiomorph" in r.body
     assert b"fetch" in r.body

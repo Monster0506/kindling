@@ -20,7 +20,9 @@ You can still use `**as scope**` and call `**scope.expose(...)**` if you prefer.
 
 Omit `template=` and register exactly one `**@body**` handler (import `**body**` from `**kindling**`). It may take `()`, `(req)`, or `(req, kindling_live)` and must return `str` or `Response`.
 
-For **`str`** responses, Kindling injects **`kindling_live.binding_tag()`** (the JSON config) and **`<script src="/_kindling/client.js" defer>`** immediately before the last **`</body>`** (case-insensitive), but only if those pieces are not already present in the string. That matches what Jinja templates do manually with `{{ kindling_live.binding_tag()|safe }}` plus the script. You can still call **`kindling_live.binding_tag()`** yourself if you need a custom placement, or return **`Response`** to bypass injection entirely.
+### Implicit `kindling-live-config` and client script (LivePage)
+
+For **LivePage** output (Jinja templates behind `**template=`**, or `**str`** from `**@body**` / `**app.page**`), Kindling injects the JSON config (`**kindling_live.binding_tag()**`) and `**<script src="/_kindling/client.js" defer>**` immediately before the last `**</body>**` (case-insensitive), but only if those fragments are not already present. You do not need `{{ kindling_live.binding_tag()|safe }}` in templates unless you want a custom placement (for example in `**<head>**`). Returning `**Response**` from a `**@body**` handler skips injection.
 
 ```python
 from kindling import body
@@ -36,14 +38,14 @@ with app.reactive("about", path="/about"):
 
 ### LivePage without a reactive scope
 
-`**app.page(path)**` registers a **`LivePage`** whose body is a plain function — no **`with app.reactive`**, no **`signal` / `@bind`**. String bodies get the same automatic config + client script injection as **`@body`**.
+`**app.page(path)**` registers a `**LivePage**` whose body is a plain function — no `**with app.reactive**`, no `**signal` / `@bind`**. String bodies get the same automatic config + client script injection as `**@body`**.
 
 `**@scope.body**` is the same as `**@body**` when you use `**as scope**`. You cannot combine `template=` with `**@body**` / `**@scope.body**`.
 
 - **Nested** `with app.reactive(...)` on the same task raises.
 - **Duplicate** scope **name** or **path** across successful exits raises.
 - `**kindling.signal` / `kindling.computed`** outside an active scope raise with a clear error.
-- `**kindling.reactive.effect**` (re-exported as `**kindling.effect**`) has no scope requirement.
+- `**kindling.reactive.effect`** (re-exported as `**kindling.effect`**) has no scope requirement.
 
 ## Template context
 
@@ -61,8 +63,8 @@ Use the `**unwrap**` filter for signal-like objects: `{{ count|unwrap }}`.
 Imported from `**kindling**` or `**kindling.reactive**`:
 
 - `**bind(selector, mode)**` — `mode` is the second **positional** argument: `"text"`, `"html"`, or `"json"` (Python’s `as` cannot be a keyword argument name). Registers a **computed** whose value is pushed over SSE and applied with `querySelector(selector)` on the client.
-- `**live(key)`** — registers a computed payload merged into SSE under `live`; the client dispatches a `**kindling-live**` `CustomEvent` with `detail` set to the `live` object.
-- `**on(element_id, event)**` — registers handlers merged into `**LivePage**` element bindings (`click`, `submit`, …). POST bodies use `kindling_target` and `kindling_event`.
+- `**live(key)`** — registers a computed payload merged into SSE under `live`; the client dispatches a `**kindling-live`** `CustomEvent` with `detail` set to the `live` object.
+- `**on(element_id, event)`** — registers handlers merged into `**LivePage`** element bindings (`click`, `submit`, …). POST bodies use `kindling_target` and `kindling_event`.
 
 ## Live page actions
 
@@ -71,8 +73,8 @@ Imported from `**kindling**` or `**kindling.reactive**`:
 
 ## Client runtime
 
-- `**GET /_kindling/client.js`** — morph updated HTML into `document.body` after POST; attaches listeners from the JSON config in `**kindling-live-config**`.
-- If `**reactiveUrl**` is present in that config, opens `**EventSource(reactiveUrl)**` and applies `bind` / `live` payloads.
+- `**GET /_kindling/client.js`** — bundles **Idiomorph** to morph the server HTML into `document.body` after POST (id-aware updates, focus preservation where applicable); attaches listeners from the JSON config in `**kindling-live-config**`. Inline `**<script>**` bodies are re-executed after each morph (guard global listeners you only want once).
+- If `**reactiveUrl`** is present in that config, opens `**EventSource(reactiveUrl)`** and applies `bind` / `live` payloads.
 
 ## SSE snapshot shape
 

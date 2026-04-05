@@ -115,10 +115,12 @@ class Application:
         self._jinja_env = env
         return env
 
-    def render(self, template_name: str, **context: object) -> Response:
+    def render_to_html(self, template_name: str, **context: object) -> str:
         tpl = self._ensure_jinja().get_template(template_name)
-        html = tpl.render(**context)
-        return html_response(html)
+        return tpl.render(**context)
+
+    def render(self, template_name: str, **context: object) -> Response:
+        return html_response(self.render_to_html(template_name, **context))
 
     def route(
         self,
@@ -149,8 +151,8 @@ class Application:
 
         The handler may take ``()``, ``(req)``, or ``(req, kindling_live)`` and return ``str`` or
         :class:`~kindling.response.Response`. String bodies get ``kindling-live-config`` and
-        ``/_kindling/client.js`` injected before ``</body>`` when missing, same as ``@body`` inside
-        ``app.reactive``.
+        ``/_kindling/client.js`` injected before ``</body>`` when missing (same as Jinja LivePage
+        templates and ``@body`` inside ``app.reactive``).
         """
 
         def deco(fn: Callable[..., Any]) -> Callable[..., Any]:

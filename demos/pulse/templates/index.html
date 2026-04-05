@@ -53,13 +53,15 @@
     <p style="font-size:0.8rem;color:var(--muted);margin:0 0 0.35rem">Latest <code>detail</code> from <code>kindling-live</code>:</p>
     <pre id="live-log">(waiting for events…)</pre>
   </main>
-  {{ kindling_live.binding_tag()|safe }}
-  <script src="/_kindling/client.js" defer></script>
   <script>
-    window.addEventListener("kindling-live", function (e) {
-      var el = document.getElementById("live-log");
-      if (el) el.textContent = JSON.stringify(e.detail, null, 2);
-    });
+    (function () {
+      if (window.__kindlingPulseDemoLiveLog) return;
+      window.__kindlingPulseDemoLiveLog = true;
+      window.addEventListener("kindling-live", function (e) {
+        var el = document.getElementById("live-log");
+        if (el) el.textContent = JSON.stringify(e.detail, null, 2);
+      });
+    })();
   </script>
 </body>
 </html>

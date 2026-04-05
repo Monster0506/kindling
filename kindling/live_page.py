@@ -24,8 +24,9 @@ class KindlingLiveHelper:
     def binding_tag(self) -> str:
         """Return the ``<script type="application/json" id="kindling-live-config">`` element.
 
-        Jinja pages call this explicitly. ``html_body`` string responses get the same tag
-        automatically before ``</body>`` unless it is already in the HTML.
+        LivePage injects this and the client ``<script>`` before ``</body>`` for both Jinja
+        templates and ``html_body`` strings when missing. Call this in a template only if you
+        need a custom placement.
         """
         import json
 
@@ -147,7 +148,8 @@ class LivePage:
         ctx = dict(self._context())
         ctx["kindling_live"] = self._helper
         assert self._template_name is not None
-        return self._app.render(self._template_name, **ctx)
+        html = self._app.render_to_html(self._template_name, **ctx)
+        return html_response(self._maybe_inject_kindling_runtime(html))
 
     def _on_get(self, req: Request) -> Response:
         return self._render(req)

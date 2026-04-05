@@ -20,6 +20,8 @@ def test_reactive_on_click_updates_template(tmp_path: Path):
 
     r0 = app.dispatch(Request.build("GET", "/"))
     assert b"0" in r0.body
+    assert b"kindling-live-config" in r0.body
+    assert b"_kindling/client.js" in r0.body
     r1 = app.dispatch(
         Request.build(
             "POST",

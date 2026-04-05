@@ -20,6 +20,9 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["kindling"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"kindling/idiomorph.min.js" = "kindling/idiomorph.min.js"
+
 [tool.uv.sources]
 signals = { path = "signals", editable = true }
 

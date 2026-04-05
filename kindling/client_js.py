@@ -1,11 +1,14 @@
 """Bundled LivePage browser runtime (vanilla JS).
 
-Morph must not re-inject this script: each load stacked duplicate document listeners,
-so one click issued N POSTs (counter jumped by N).
+DOM updates after POST use `Idiomorph`_ 0.7.4 (0BSD) for id-aware morphing instead of replacing
+``innerHTML``. The Kindling client script must not be loaded twice (duplicate document listeners).
+
+.. _Idiomorph: https://github.com/bigskysoftware/idiomorph
 """
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from kindling.request import Request
@@ -16,7 +19,7 @@ if TYPE_CHECKING:
 
 KINDLING_CLIENT_PATH = "/_kindling/client.js"
 
-CLIENT_JS = r"""
+_KINDLING_RUNTIME = r"""
 (function () {
   function readConfig() {
     var el = document.getElementById("kindling-live-config");
@@ -28,18 +31,29 @@ CLIENT_JS = r"""
     }
   }
 
+  function isKindlingClientScript(node) {
+    return (
+      node instanceof HTMLScriptElement &&
+      (node.getAttribute("src") || "").indexOf("_kindling/client.js") !== -1
+    );
+  }
+
   function morphBody(html) {
     var doc = new DOMParser().parseFromString(html, "text/html");
     if (!doc || !doc.body) return;
-    document.body.innerHTML = doc.body.innerHTML;
-    var scripts = doc.body.querySelectorAll("script[src]");
-    scripts.forEach(function (s) {
-      var src = s.getAttribute("src") || "";
-      if (src.indexOf("_kindling/client.js") !== -1) return;
+    Idiomorph.morph(document.body, doc.body, {
+      morphStyle: "innerHTML",
+      callbacks: {
+        beforeNodeAdded: function (node) {
+          if (isKindlingClientScript(node)) return false;
+          return true;
+        },
+      },
+    });
+    document.body.querySelectorAll("script:not([src])").forEach(function (s) {
       var n = document.createElement("script");
-      n.src = s.src;
-      n.defer = true;
-      document.body.appendChild(n);
+      n.textContent = s.textContent;
+      s.parentNode.replaceChild(n, s);
     });
     var cfg = readConfig();
     if (cfg) setupReactive(cfg);
@@ -173,6 +187,14 @@ CLIENT_JS = r"""
   bootstrap();
 })();
 """.strip()
+
+
+def _bundle_client_js() -> str:
+    idiomorph = (Path(__file__).resolve().parent / "idiomorph.min.js").read_text(encoding="utf-8")
+    return idiomorph + "\n" + _KINDLING_RUNTIME
+
+
+CLIENT_JS = _bundle_client_js()
 
 
 def mount_kindling_client(app: Application) -> None:

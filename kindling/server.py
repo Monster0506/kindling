@@ -16,6 +16,17 @@ if TYPE_CHECKING:
     from kindling.app import Application
 
 
+def _try_sendall(sock: socket.socket, data: bytes) -> bool:
+    """Send to client; return False if the connection is gone (normal for closed SSE tabs)."""
+    if not data:
+        return True
+    try:
+        sock.sendall(data)
+    except OSError:
+        return False
+    return True
+
+
 def _handle_client(sock: socket.socket, app: Application) -> None:
     conn = h11.Connection(h11.SERVER)
     method = ""
@@ -86,10 +97,12 @@ def _write_response_raw(
         _write_streamed_response_raw(sock, conn, resp)
         return
     header_list = [(k.encode("latin-1"), v.encode("latin-1")) for k, v in resp.headers]
-    sock.sendall(conn.send(h11.Response(status_code=resp.status, headers=header_list)))
+    if not _try_sendall(sock, conn.send(h11.Response(status_code=resp.status, headers=header_list))):
+        return
     if resp.body:
-        sock.sendall(conn.send(h11.Data(data=resp.body)))
-    sock.sendall(conn.send(h11.EndOfMessage()))
+        if not _try_sendall(sock, conn.send(h11.Data(data=resp.body))):
+            return
+    _try_sendall(sock, conn.send(h11.EndOfMessage()))
 
 
 def _write_streamed_response_raw(
@@ -100,13 +113,15 @@ def _write_streamed_response_raw(
     if "content-length" not in names and "transfer-encoding" not in names:
         headers = [("Transfer-Encoding", "chunked")] + headers
     header_list = [(k.encode("latin-1"), v.encode("latin-1")) for k, v in headers]
-    sock.sendall(conn.send(h11.Response(status_code=resp.status, headers=header_list)))
+    if not _try_sendall(sock, conn.send(h11.Response(status_code=resp.status, headers=header_list))):
+        return
     try:
         for chunk in resp.iterator:
             if chunk:
-                sock.sendall(conn.send(h11.Data(data=chunk)))
+                if not _try_sendall(sock, conn.send(h11.Data(data=chunk))):
+                    return
     finally:
-        sock.sendall(conn.send(h11.EndOfMessage()))
+        _try_sendall(sock, conn.send(h11.EndOfMessage()))
 
 
 def serve(
