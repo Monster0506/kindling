@@ -23,6 +23,8 @@ packages = ["kindling"]
 [tool.hatch.build.targets.wheel.force-include]
 "kindling/idiomorph.min.js" = "kindling/idiomorph.min.js"
 
+# signals: PyPI package name "signals", source at https://github.com/monster0506/pysignals
+# Checked out under ./signals via git submodule (.gitmodules). uv uses that tree for editable dev.
 [tool.uv.sources]
 signals = { path = "signals", editable = true }
 

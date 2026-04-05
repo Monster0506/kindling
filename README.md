@@ -1,12 +1,17 @@
 # Kindling
 
-Small Python web layer built around the [`signals`](./signals) package: routes, Jinja templates, a threaded dev server, WSGI, live pages with optional morph + SSE for reactive UIs.
+Small Python web layer built around **[signals](https://github.com/monster0506/pysignals)** (`signal`, `computed`, `effect`): routes, Jinja templates, a threaded dev server, WSGI, live pages with optional morph + SSE for reactive UIs. The dependency is wired into this repo as a **git submodule** at [`signals/`](./signals) (see [`.gitmodules`](./.gitmodules)).
 
 ## Install
 
-From the repo root (uses the local `signals` path dependency):
+Clone with submodules, then sync:
 
 ```bash
+git clone --recurse-submodules <repo-url>
+cd kindling
+# If you already cloned without submodules:
+git submodule update --init --recursive
+
 uv sync
 ```
 
@@ -64,7 +69,6 @@ uv run pytest
 
 ## Docs
 
-- **ARCHITECTURE.md** - layout of packages and request flow.
-- **REACTIVE_RFC.md** - reactive scope, bind/live/on, transport.
-- **demos/README.md** - how to run the sample apps.
-- **implementation.md** - ordered build plan used for this codebase.
+**Docusaurus site** (guides + API overview): see [`docs-site/`](./docs-site/). From that directory run `npm install`, `npm start`, or `npm run build`.
+
+- **demos/README.md** - how to run the sample apps under `demos/`.
