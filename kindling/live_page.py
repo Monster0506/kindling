@@ -16,18 +16,10 @@ ActionFn = Callable[..., object]
 
 
 class KindlingLiveHelper:
-    """Injected into templates as `kindling_live`; embeds config JSON for the client script."""
-
     def __init__(self, page: LivePage) -> None:
         self._page = page
 
     def binding_tag(self) -> str:
-        """Return the ``<script type="application/json" id="kindling-live-config">`` element.
-
-        LivePage injects this and the client ``<script>`` before ``</body>`` for both Jinja
-        templates and ``html_body`` strings when missing. Call this in a template only if you
-        need a custom placement.
-        """
         import json
 
         cfg = self._page._binding_manifest()
@@ -53,8 +45,6 @@ class ElementBinder:
 
 
 class LivePage:
-    """One path: GET renders a template or a ``body`` callable; POST then re-renders."""
-
     def __init__(
         self,
         app: Application,
@@ -119,10 +109,9 @@ class LivePage:
             return fn(req)
         if n == 2:
             return fn(req, self._helper)
-        raise TypeError(f"body handler must take 0–2 arguments, not {n}")
+        raise TypeError(f"body handler must take 0-2 arguments, not {n}")
 
     def _maybe_inject_kindling_runtime(self, html: str) -> str:
-        """Insert live config + client script before ``</body>`` if the HTML omits them."""
         parts: list[str] = []
         if "kindling-live-config" not in html:
             parts.append(self._helper.binding_tag())

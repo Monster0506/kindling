@@ -26,8 +26,6 @@ def _parse_form_urlencoded(body: bytes) -> dict[str, list[str]]:
 
 @dataclass(frozen=True, slots=True)
 class Request:
-    """HTTP request (immutable)."""
-
     method: str
     path: str
     query_string: str

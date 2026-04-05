@@ -1,5 +1,3 @@
-"""Kindling web framework."""
-
 from kindling.app import Application
 from kindling.live_page import LivePage
 from kindling.reactive import bind, body, computed, effect, expose, live, on, signal

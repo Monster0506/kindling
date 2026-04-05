@@ -1,7 +1,3 @@
-"""
-Demo: append-only guestbook with HTML bind for the list.
-"""
-
 from __future__ import annotations
 
 import html
@@ -33,7 +29,7 @@ def main() -> None:
             cur.append(text)
             entries.value = cur
 
-    app.run(host="127.0.0.1", port=8002, label="Guestbook demo —")
+    app.run(host="127.0.0.1", port=8002, label="Guestbook demo -")
 
 
 if __name__ == "__main__":

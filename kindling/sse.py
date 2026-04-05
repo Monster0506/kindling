@@ -17,8 +17,6 @@ SnapshotFn = Callable[[], dict]
 
 
 class SseFanout:
-    """Subscribe ``signals.effect`` to a snapshot; push JSON to all stream iterators."""
-
     def __init__(self, snapshot: SnapshotFn) -> None:
         self._snapshot = snapshot
         self._queues: list[queue.SimpleQueue[str]] = []

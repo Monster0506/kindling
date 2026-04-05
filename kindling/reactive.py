@@ -20,8 +20,6 @@ _reactive_scope: ContextVar[ReactiveScope | None] = ContextVar(
 
 
 class ReactiveScope:
-    """Active `with app.reactive(...)` scope; collects bind/live/on and template exports."""
-
     def __init__(self, app: Application, name: str, path: str, template: str | None) -> None:
         self.app = app
         self.name = name
@@ -34,7 +32,6 @@ class ReactiveScope:
         self._html_body: Callable[..., object] | None = None
 
     def body(self, fn: Callable[..., object]) -> Callable[..., object]:
-        """Register raw HTML (same as module-level :func:`body` inside ``with app.reactive``)."""
         if self._html_body is not None:
             raise ValueError("Only one body handler is allowed per reactive scope")
         if self.template is not None:
@@ -43,7 +40,6 @@ class ReactiveScope:
         return fn
 
     def expose(self, **variables: Any) -> None:
-        """Expose names to Jinja (same as module-level :func:`expose` inside the block)."""
         self._exports.update(variables)
 
     def template_context(self) -> dict[str, Any]:
@@ -101,7 +97,6 @@ def on(element_id: str, event: str):
 
 
 def expose(**variables: Any) -> None:
-    """Merge names into the Jinja context for the current ``app.reactive`` block."""
     sc = _reactive_scope.get()
     if sc is None:
         raise RuntimeError("expose() requires an active reactive scope (use `with app.reactive(...):`)")
@@ -109,11 +104,6 @@ def expose(**variables: Any) -> None:
 
 
 def body(fn: Callable[..., object]) -> Callable[..., object]:
-    """Register raw HTML for the current reactive block (no ``template=``).
-
-    Same as ``scope.body`` but does not require ``as scope``. The handler may take
-    ``()``, ``(req)``, or ``(req, kindling_live)`` and must return ``str`` or ``Response``.
-    """
     sc = _reactive_scope.get()
     if sc is None:
         raise RuntimeError("body() requires an active reactive scope (use `with app.reactive(...):`)")

@@ -8,8 +8,6 @@ from kindling.streaming import StreamedHttpResponse
 
 @dataclass
 class KindlingConfig:
-    """Defaults for security headers, limits, and optional Server."""
-
     max_request_body_bytes: int = 1024 * 1024
     server_header: str | None = None
     default_security_headers: tuple[tuple[str, str], ...] = (
@@ -21,7 +19,6 @@ class KindlingConfig:
 
 
 def finalize_response(resp: Response, config: KindlingConfig) -> Response:
-    """Apply config defaults for headers not already set by the handler."""
     present = {name.lower() for name, _ in resp.headers}
     prefix: list[tuple[str, str]] = []
     if config.server_header and "server" not in present:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
@@ -10,9 +10,6 @@ from kindling.config import KindlingConfig, finalize_response, finalize_streamin
 from kindling.request import Request
 from kindling.response import Response, html_response
 from kindling.streaming import StreamedHttpResponse
-
-if TYPE_CHECKING:
-    pass
 
 
 def _unwrap_filter(value: object) -> object:
@@ -25,7 +22,7 @@ Handler = Callable[[Request], object]
 @dataclass
 class _Route:
     methods: frozenset[str]
-    pattern_segments: tuple[str | None, ...]  # None = {param}
+    pattern_segments: tuple[str | None, ...]
     param_names: tuple[str, ...]
     handler: Handler
 
@@ -147,14 +144,6 @@ class Application:
         return deco
 
     def page(self, pattern: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-        """Register a :class:`~kindling.live_page.LivePage` from an HTML callable (no ``reactive`` block).
-
-        The handler may take ``()``, ``(req)``, or ``(req, kindling_live)`` and return ``str`` or
-        :class:`~kindling.response.Response`. String bodies get ``kindling-live-config`` and
-        ``/_kindling/client.js`` injected before ``</body>`` when missing (same as Jinja LivePage
-        templates and ``@body`` inside ``app.reactive``).
-        """
-
         def deco(fn: Callable[..., Any]) -> Callable[..., Any]:
             from kindling.live_page import LivePage
 

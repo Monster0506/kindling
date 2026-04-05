@@ -4,8 +4,6 @@ from collections.abc import Iterator
 
 
 class StreamedHttpResponse:
-    """Response with a byte iterator body (e.g. SSE). Not fully supported by the dev server or WSGI adapter yet."""
-
     __slots__ = ("status", "headers", "iterator")
 
     def __init__(

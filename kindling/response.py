@@ -6,8 +6,6 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True, slots=True)
 class Response:
-    """HTTP response: status, header list, body bytes."""
-
     status: int
     headers: tuple[tuple[str, str], ...]
     body: bytes

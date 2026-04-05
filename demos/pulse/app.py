@@ -1,7 +1,3 @@
-"""
-Demo: @live pushes a payload; the page listens for the kindling-live CustomEvent.
-"""
-
 from __future__ import annotations
 
 import threading
@@ -18,7 +14,6 @@ def main() -> None:
     with app.reactive("pulse", path="/", template="index.html"):
         started = time.monotonic()
         tick = signal(0)
-        # Recomputed every second so @live can expose a moving clock (time is not reactive).
         wall = signal(False)
 
         expose(tick=tick)
@@ -46,7 +41,7 @@ def main() -> None:
         def bump() -> None:
             tick.value += 1
 
-    app.run(host="127.0.0.1", port=8003, label="Pulse demo —")
+    app.run(host="127.0.0.1", port=8003, label="Pulse demo -")
 
 
 if __name__ == "__main__":

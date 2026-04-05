@@ -1,11 +1,3 @@
-"""
-Demo: reactive home plus a separate JSON route (no LivePage on /api/*).
-
-The counter is a ``signals.signal`` shared by ``/`` (bind + on) and ``/api/hello`` (JSON).
-``kindling.signal`` only works inside ``app.reactive``; the underlying package signal works
-everywhere Kindling computeds read ``.value``.
-"""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -43,7 +35,7 @@ def main() -> None:
             }
         )
 
-    app.run(host="127.0.0.1", port=8000, label="Routes demo —")
+    app.run(host="127.0.0.1", port=8000, label="Routes demo -")
 
 
 if __name__ == "__main__":

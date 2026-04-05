@@ -1,11 +1,3 @@
-"""Bundled LivePage browser runtime (vanilla JS).
-
-DOM updates after POST use `Idiomorph`_ 0.7.4 (0BSD) for id-aware morphing instead of replacing
-``innerHTML``. The Kindling client script must not be loaded twice (duplicate document listeners).
-
-.. _Idiomorph: https://github.com/bigskysoftware/idiomorph
-"""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -198,7 +190,6 @@ CLIENT_JS = _bundle_client_js()
 
 
 def mount_kindling_client(app: Application) -> None:
-    """Register GET /_kindling/client.js once per application."""
     if getattr(app, "_kindling_client_mounted", False):
         return
     app._kindling_client_mounted = True  # type: ignore[attr-defined]

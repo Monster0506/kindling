@@ -1,8 +1,3 @@
-"""
-Demo: reactive scope + LivePage — @bind for the readout, @on for every control.
-Also @body (about), app.page (/def) without a reactive block.
-"""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -46,14 +41,13 @@ def main() -> None:
                 "<p>Raw HTML via <code>@body</code> (no template file; no <code>as scope</code>).</p>"
                 "<p>Kindling injects the live config and <code>/_kindling/client.js</code> "
                 "before <code>&lt;/body&gt;</code> when you omit them.</p>"
-                "<p><a href='/def'>LivePage without <code>reactive</code> →</a></p>"
+                "<p><a href='/def'>LivePage without <code>reactive</code> -></a></p>"
                 "<p>Back to <a href='/'>counter</a>.</p>"
                 "</body></html>"
             )
 
     @app.page("/def")
     def def_page(_req: Request) -> str:
-        """Standalone LivePage via ``Application.page`` (no ``with app.reactive``)."""
         return (
             "<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'/>"
             "<meta name='viewport' content='width=device-width, initial-scale=1'/>"
@@ -64,13 +58,13 @@ def main() -> None:
             "<dl>"
             "<dt>Signal</dt><dd>Reactive cell; reads/writes use <code>.value</code>.</dd>"
             "<dt>LivePage</dt><dd>GET/POST on one path; morph after POST when the client script runs.</dd>"
-            "<dt><code>app.page</code></dt><dd>Registers a LivePage from a function — no reactive scope.</dd>"
+            "<dt><code>app.page</code></dt><dd>Registers a LivePage from a function; no reactive scope.</dd>"
             "</dl>"
-            "<p><a href='/about'>About</a> · <a href='/'>Counter</a></p>"
+            "<p><a href='/about'>About</a> | <a href='/'>Counter</a></p>"
             "</body></html>"
         )
 
-    app.run(host="127.0.0.1", port=8001, label="Counter demo —")
+    app.run(host="127.0.0.1", port=8001, label="Counter demo -")
 
 
 if __name__ == "__main__":

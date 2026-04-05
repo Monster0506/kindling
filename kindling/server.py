@@ -17,7 +17,6 @@ if TYPE_CHECKING:
 
 
 def _try_sendall(sock: socket.socket, data: bytes) -> bool:
-    """Send to client; return False if the connection is gone (normal for closed SSE tabs)."""
     if not data:
         return True
     try:

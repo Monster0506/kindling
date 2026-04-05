@@ -64,7 +64,7 @@ uv run pytest
 
 ## Docs
 
-- **ARCHITECTURE.md** — layout of packages and request flow.
-- **REACTIVE_RFC.md** — reactive scope, bind/live/on, transport.
-- **demos/README.md** — how to run the sample apps.
-- **implementation.md** — ordered build plan used for this codebase.
+- **ARCHITECTURE.md** - layout of packages and request flow.
+- **REACTIVE_RFC.md** - reactive scope, bind/live/on, transport.
+- **demos/README.md** - how to run the sample apps.
+- **implementation.md** - ordered build plan used for this codebase.
