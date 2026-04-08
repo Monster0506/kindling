@@ -81,6 +81,21 @@ _KINDLING_RUNTIME = r"""
       window.__kindlingEs = null;
     }
     window.__kindlingReactiveUrl = cfg.reactiveUrl;
+    if (cfg.bindings) {
+      Object.keys(cfg.bindings).forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        cfg.bindings[id].forEach(function (ev) {
+          if (ev === "click" || ev === "submit") return;
+          el.addEventListener(ev, function () {
+            var params = "kindling_target=" + encodeURIComponent(id)
+                       + "&kindling_event=" + encodeURIComponent(ev);
+            if ("value" in el) params += "&value=" + encodeURIComponent(el.value);
+            postUrlEncoded(params).then(morphBody);
+          });
+        });
+      });
+    }
     try {
       window.__kindlingEs = new EventSource(cfg.reactiveUrl);
       window.__kindlingEs.onmessage = function (ev) {
