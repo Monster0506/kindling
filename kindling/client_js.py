@@ -43,6 +43,8 @@ _KINDLING_RUNTIME = r"""
       },
     });
     document.body.querySelectorAll("script:not([src])").forEach(function (s) {
+      var t = s.getAttribute("type");
+      if (t && t !== "text/javascript" && t !== "module") return;
       var n = document.createElement("script");
       n.textContent = s.textContent;
       s.parentNode.replaceChild(n, s);
