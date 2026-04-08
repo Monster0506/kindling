@@ -23,6 +23,7 @@ Responses: `Response`, `html_response`, `json_response`, `text_response`, `not_f
 - `render_to_html(template_name, **context) -> str`
 - `reactive(name, *, path, template=None)` - context manager (see [Reactive UI](./reactive-ui))
 - `page(pattern)` - `LivePage` from callable body without reactive scope
+- `static(url_prefix, fs_path)` - serve files from a local directory under a URL prefix
 - `sse(pattern)` - SSE from snapshot callable
 - `dispatch(req) -> Response | StreamedHttpResponse`
 - `run(host=..., port=..., label=..., quiet=...)`

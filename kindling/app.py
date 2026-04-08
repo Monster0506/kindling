@@ -93,6 +93,7 @@ class Application:
     template_dir: str | None = None
     config: KindlingConfig = field(default_factory=KindlingConfig)
     _routes: list[_Route] = field(default_factory=list, repr=False)
+    _static_mounts: list[object] = field(default_factory=list, repr=False)
     _jinja_env: Environment | None = field(default=None, init=False, repr=False)
     _reactive_names: set[str] = field(default_factory=set, repr=False)
     _reactive_paths: set[str] = field(default_factory=set, repr=False)
@@ -188,7 +189,30 @@ class Application:
             print(f"{label or 'Serving'} http://{host}:{port}/")
         serve(self, host=host, port=port)
 
+    def static(self, url_prefix: str, fs_path: str) -> None:
+        from pathlib import Path
+
+        from kindling.static import _StaticMount
+
+        prefix = "/" + url_prefix.strip("/")
+        root = Path(fs_path).resolve()
+        if not root.is_dir():
+            raise ValueError(f"static fs_path {fs_path!r} is not a directory")
+        self._static_mounts.append(_StaticMount(url_prefix=prefix, fs_root=root))
+
     def dispatch(self, req: Request) -> Response | StreamedHttpResponse:
+        if req.method in ("GET", "HEAD"):
+            from kindling.static import _StaticMount, serve_static
+
+            for mount in self._static_mounts:
+                assert isinstance(mount, _StaticMount)
+                prefix = mount.url_prefix
+                if req.path == prefix or req.path.startswith(prefix + "/"):
+                    resp = serve_static(mount, req)
+                    if req.method == "HEAD":
+                        resp = Response(status=resp.status, headers=resp.headers, body=b"")
+                    return finalize_response(resp, self.config)
+
         path_segs = _split_path(req.path)
         for r in self._routes:
             if req.method not in r.methods:
