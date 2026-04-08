@@ -39,6 +39,10 @@ def json_response(obj: object, status: int = 200) -> Response:
     return Response(status=status, headers=h, body=data)
 
 
+def redirect(location: str, status: int = 302) -> Response:
+    return Response(status=status, headers=(("Location", location),), body=b"")
+
+
 def not_found(message: str = "Not Found") -> Response:
     return text_response(message, status=404)
 
