@@ -63,7 +63,7 @@ def serve_static(mount: _StaticMount, req: Request) -> Response:
     except OSError:
         return not_found()
 
-    if not str(resolved).startswith(str(fs_root_resolved) + "/"):
+    if not resolved.is_relative_to(fs_root_resolved):
         return not_found()
 
     if not resolved.is_file():
