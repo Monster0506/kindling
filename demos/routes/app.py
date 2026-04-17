@@ -11,9 +11,11 @@ def main() -> None:
     base = Path(__file__).resolve().parent
     app = Application(template_dir=str(base / "templates"))
 
+    # count is intentionally shared across the page and the JSON API endpoint
     count = sig(0)
 
-    with app.reactive("home", path="/", template="index.html"):
+    @app.reactive("home", path="/", template="index.html")
+    def _home() -> None:
         expose(count=count)
 
         @bind("#readout", "text")

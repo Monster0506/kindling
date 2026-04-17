@@ -154,9 +154,13 @@ class Application:
         return deco
 
     def reactive(self, name: str, *, path: str, template: str | None = None):
-        from kindling.reactive import managed_scope
+        def decorator(factory_fn: Callable[[], None]) -> Callable[[], None]:
+            from kindling.reactive import register_reactive
 
-        return managed_scope(self, name, path, template)
+            register_reactive(self, name, path, template, factory_fn)
+            return factory_fn
+
+        return decorator
 
     def sse(self, pattern: str):
         from kindling.sse import register_sse_route

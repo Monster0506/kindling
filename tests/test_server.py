@@ -62,7 +62,8 @@ def test_threaded_server_streams_reactive_sse(tmp_path: Path):
     tpl = tmp_path / "i.html"
     tpl.write_text('<p id="x">0</p>', encoding="utf-8")
     app = Application(template_dir=str(tmp_path))
-    with app.reactive("st", path="/", template="i.html"):
+    @app.reactive("st", path="/", template="i.html")
+    def _():
         n = signal(0)
         expose(n=n)
 

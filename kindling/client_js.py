@@ -54,6 +54,9 @@ _KINDLING_RUNTIME = r"""
   }
 
   function postUrlEncoded(body) {
+    var cfg = readConfig();
+    var conn = cfg && cfg.conn;
+    if (conn) body += "&kindling_conn=" + encodeURIComponent(conn);
     return fetch(location.pathname + location.search, {
       method: "POST",
       headers: {
@@ -69,8 +72,9 @@ _KINDLING_RUNTIME = r"""
 
   function setupReactive(cfg) {
     if (!cfg || !cfg.reactiveUrl) return;
+    var ssUrl = cfg.reactiveUrl + (cfg.conn ? "?conn=" + encodeURIComponent(cfg.conn) : "");
     if (
-      window.__kindlingReactiveUrl === cfg.reactiveUrl &&
+      window.__kindlingReactiveUrl === ssUrl &&
       window.__kindlingEs &&
       window.__kindlingEs.readyState !== 2
     ) {
@@ -82,7 +86,7 @@ _KINDLING_RUNTIME = r"""
       } catch (e) {}
       window.__kindlingEs = null;
     }
-    window.__kindlingReactiveUrl = cfg.reactiveUrl;
+    window.__kindlingReactiveUrl = ssUrl;
     if (cfg.bindings) {
       Object.keys(cfg.bindings).forEach(function (id) {
         var el = document.getElementById(id);
@@ -99,7 +103,7 @@ _KINDLING_RUNTIME = r"""
       });
     }
     try {
-      window.__kindlingEs = new EventSource(cfg.reactiveUrl);
+      window.__kindlingEs = new EventSource(ssUrl);
       window.__kindlingEs.onmessage = function (ev) {
         var msg;
         try {

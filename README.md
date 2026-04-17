@@ -50,10 +50,25 @@ Run with **waitress**, **gunicorn**, etc., e.g. `gunicorn myapp:wsgi_app`.
 
 - **`LivePage`**: one URL, GET renders a **template** or an **`html_body`** callable, POST runs named `action=` handlers or element bindings, then re-renders.
 - **Client script:** `GET /_kindling/client.js` (mounted when you use `LivePage`). POST responses are merged into the live DOM with **Idiomorph** (vendored, 0BSD). For **LivePage** (Jinja, **`@body`**, **`app.page`**), Kindling injects `kindling-live-config` and that script before `</body>` when missing. Inline scripts after a morph are re-run via a small Kindling hook (use one-time guards for `window` listeners). You can still call `{{ kindling_live.binding_tag()|safe }}` for a custom placement.
-- **`with app.reactive(...):`**: scoped `signal` / `computed`, plus `bind`, `live`, and `on` decorators. If you use `@bind` or `@live`, Kindling registers **`GET /_kindling/reactive/<scope>`** and the client opens **EventSource** to apply updates.
+- **`@app.reactive(name, path=..., template=...)`**: decorator that registers a **per-connection** reactive scope. The decorated function is called fresh for each browser connection, creating isolated signal graphs — so each user has their own state. Use `signal`, `computed`, `bind`, `live`, `on`, and `expose` inside it. If you use `@bind` or `@live`, Kindling registers **`GET /_kindling/reactive/<scope>?conn=<id>`** and the client opens **EventSource** to apply updates.
 - **`app.page("/path")`**: registers a **`LivePage`** with no reactive scope (static or hand-written HTML).
 
-Use **`expose(count=count)`** or **`scope.expose(count=count)`** to pass reactive values into the Jinja context.
+Use **`expose(count=count)`** inside the reactive factory to pass values into the Jinja context.
+
+```python
+@app.reactive("counter", path="/", template="index.html")
+def _():
+    count = signal(0)
+    expose(count=count)
+
+    @bind("#readout", "text")
+    def readout() -> str:
+        return str(count.value)
+
+    @on("inc", "click")
+    def inc() -> None:
+        count.value += 1
+```
 
 See **REACTIVE_RFC.md** for naming and bind syntax (`bind(selector, "text"|"html"|"json")`). Example apps live under **`demos/`** (see **`demos/README.md`**).
 

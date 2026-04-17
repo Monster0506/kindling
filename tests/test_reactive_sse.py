@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from kindling import Application, Request, bind, signal
+from kindling import Application, Request, bind, expose, signal
 from kindling.streaming import StreamedHttpResponse
 
 
@@ -9,9 +9,11 @@ def test_reactive_stream_get_returns_sse_with_bind_payload(tmp_path: Path):
     tpl = tmp_path / "index.html"
     tpl.write_text("<span id='x'>0</span>", encoding="utf-8")
     app = Application(template_dir=str(tmp_path))
-    with app.reactive("app", path="/", template="index.html") as scope:
+
+    @app.reactive("app", path="/", template="index.html")
+    def _():
         count = signal(7)
-        scope.expose(count=count)
+        expose(count=count)
 
         @bind("#x", "text")
         def readout() -> str:

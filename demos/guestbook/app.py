@@ -10,7 +10,8 @@ def main() -> None:
     base = Path(__file__).resolve().parent
     app = Application(template_dir=str(base / "templates"))
 
-    with app.reactive("guestbook", path="/", template="index.html"):
+    @app.reactive("guestbook", path="/", template="index.html")
+    def _guestbook() -> None:
         entries = signal(list[str]())
 
         expose(entries=entries)

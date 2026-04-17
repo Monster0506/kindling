@@ -9,8 +9,8 @@ from kindling.live_page import LivePage
 def test_reactive_body_returns_html():
     app = Application()
 
-    with app.reactive("p", path="/p"):
-
+    @app.reactive("p", path="/p")
+    def _():
         @body
         def page(_req: Request) -> str:
             return "<!DOCTYPE html><html><body>hi</body></html>"
@@ -25,7 +25,9 @@ def test_reactive_body_returns_html():
 def test_reactive_requires_template_or_body():
     app = Application()
     with pytest.raises(ValueError, match="needs template="):
-        with app.reactive("n", path="/n"):
+
+        @app.reactive("n", path="/n")
+        def _():
             pass
 
 
@@ -33,8 +35,9 @@ def test_body_rejects_when_template_set(tmp_path: Path):
     app = Application(template_dir=str(tmp_path))
     (tmp_path / "t.html").write_text("<p>x</p>", encoding="utf-8")
     with pytest.raises(ValueError, match="Cannot use body"):
-        with app.reactive("z", path="/z", template="t.html"):
 
+        @app.reactive("z", path="/z", template="t.html")
+        def _():
             @body
             def _c() -> str:
                 return "<html></html>"
@@ -44,9 +47,11 @@ def test_expose_module_level(tmp_path: Path):
     app = Application(template_dir=str(tmp_path))
     (tmp_path / "t.html").write_text("<p>{{ n|unwrap }}</p>", encoding="utf-8")
 
-    with app.reactive("e", path="/", template="t.html"):
+    @app.reactive("e", path="/", template="t.html")
+    def _():
         n = signal(3)
         expose(n=n)
+
     r = app.dispatch(Request.build("GET", "/"))
     assert b"3" in r.body
 

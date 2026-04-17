@@ -9,7 +9,8 @@ def main() -> None:
     base = Path(__file__).resolve().parent
     app = Application(template_dir=str(base / "templates"))
 
-    with app.reactive("counter", path="/", template="index.html"):
+    @app.reactive("counter", path="/", template="index.html")
+    def _counter() -> None:
         count = signal(0)
         expose(count=count)
 
@@ -29,7 +30,8 @@ def main() -> None:
         def reset_click() -> None:
             count.value = 0
 
-    with app.reactive("about", path="/about"):
+    @app.reactive("about", path="/about")
+    def _about() -> None:
         @body
         def about_html(_req: Request) -> str:
             return (
@@ -38,7 +40,7 @@ def main() -> None:
                 "<title>About</title>"
                 "<style>body{font-family:system-ui;padding:2rem;max-width:40rem;line-height:1.5}"
                 "code{font-size:0.9em}a{color:#ea580c}</style></head><body>"
-                "<p>Raw HTML via <code>@body</code> (no template file; no <code>as scope</code>).</p>"
+                "<p>Raw HTML via <code>@body</code> (no template file).</p>"
                 "<p>Kindling injects the live config and <code>/_kindling/client.js</code> "
                 "before <code>&lt;/body&gt;</code> when you omit them.</p>"
                 "<p><a href='/def'>LivePage without <code>reactive</code> -></a></p>"

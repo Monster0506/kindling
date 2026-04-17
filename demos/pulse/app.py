@@ -11,7 +11,8 @@ def main() -> None:
     base = Path(__file__).resolve().parent
     app = Application(template_dir=str(base / "templates"))
 
-    with app.reactive("pulse", path="/", template="index.html"):
+    @app.reactive("pulse", path="/", template="index.html")
+    def _pulse() -> None:
         started = time.monotonic()
         tick = signal(0)
         wall = signal(False)
